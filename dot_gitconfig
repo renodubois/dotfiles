@@ -1,0 +1,16 @@
+[core]
+	editor = hx
+[user]
+	name = Reno DuBois
+	email = me@renodubois.com
+	signingkey = 5E190D3C65FAC66D
+[gc]
+	autoDetach = false
+[init]
+	defaultBranch = main
+[pull]
+	rebase = false
+[push]
+	default = current
+[diff]
+	external = difft

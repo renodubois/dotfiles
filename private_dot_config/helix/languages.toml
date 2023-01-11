@@ -1,0 +1,23 @@
+[[language]]
+name = "javascript"
+indent = { tab-width = 4, unit = "	" } 
+auto-format = true
+
+[[language]]
+name = "typescript"
+indent = { tab-width = 4, unit = "	" } 
+auto-format = true
+
+[[language]]
+name = "jsx"
+indent = { tab-width = 4, unit = "	" } 
+auto-format = true
+
+[[language]]
+name = "tsx"
+indent = { tab-width = 4, unit = "	" } 
+auto-format = true
+
+[[language]]
+name = "php"
+indent = { tab-width = 4, unit = "	" } 
