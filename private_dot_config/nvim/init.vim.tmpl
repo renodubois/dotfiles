@@ -258,7 +258,7 @@ dap.configurations.php = {
 		name = 'Listen for Xdebug',
 		port = 9001,
 		pathMappings = {
-			["/vagrant/"] = "$HOME/lacrm/LessAnnoyingCRM"
+			["/vagrant/"] = "{{ .chezmoi.homeDir }}/lacrm/LessAnnoyingCRM"
 		}
 	}
 }
