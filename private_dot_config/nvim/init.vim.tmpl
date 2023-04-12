@@ -11,30 +11,28 @@ filetype plugin indent on " from old vimrc : indentation detection
 set autoindent " Turn on autoindent
 set nowrap " Disallow wrapping
 set noswapfile " eff em
-set nobackup " TODO: look this up
 set undodir=~/.vim/undodir
 set undofile " TODO: look this up (works w/ Undo Tree)
 set incsearch " highlights as you search
 set scrolloff=8 " Starts scrolling 8 lines below the bottom of the screen
 set signcolumn=yes " Extra column for linting/errors, etc
+set smartcase " Insensitive search if all lowercase, sensitive if any uppercase chars are present
 
 " Plugins
 call plug#begin('~/.vim/plugged')
 Plug 'junegunn/fzf' " fuzzy file finder
 Plug 'junegunn/fzf.vim' " fuzzy file finder
-Plug 'neovim/nvim-lspconfig' " LSP config
-Plug 'folke/lsp-colors.nvim' " LSP color stuff
-Plug 'tpope/vim-fugitive' " Git wrapper 
+Plug 'tpope/vim-fugitive' " Git wrapper
 Plug 'tpope/vim-eunuch' " UNIX Command sugar
-Plug 'dracula/vim', { 'as': 'dracula' } " theme
-Plug 'puremourning/vimspector' " debugging
-Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' } " Better Go support
+Plug 'ellisonleao/gruvbox.nvim' " theme
 Plug 'neoclide/coc.nvim', { 'branch': 'release' } " VS:Code-like autocomplete
-Plug 'rust-lang/rust.vim' " Better Rust support
 Plug 'rizzatti/dash.vim' " Searching Dash docs from Vim
 Plug 'vim-airline/vim-airline' " cool statusbar
 Plug 'kyazdani42/nvim-tree.lua' " file tree
 Plug 'kyazdani42/nvim-web-devicons' " file tree (icons)
+Plug 'prisma/vim-prisma' " prisma (js stuff)
+Plug 'mfussenegger/nvim-dap' " debugging support (via DAP)
+Plug 'rcarriga/nvim-dap-ui' " UI for nvim-dap
 call plug#end()
 
 
@@ -51,7 +49,7 @@ nnoremap <silent> <leader>d :bp\|bd #<CR>
 " From https://github.com/junegunn/fzf.vim/issues/346#issuecomment-288483704
 command! -bang -nargs=* Ag call fzf#vim#ag(<q-args>, {'options': '--delimiter : --nth 4..'}, <bang>0)
 nnoremap <C-P> :Files<CR>
-nnoremap <leader>fs :Ag<Space>
+nnoremap <leader>/ :Ag<Space>
 nnoremap <leader>fb :Buffers<CR>
 
 " --- vim-fugitive
@@ -65,11 +63,6 @@ let g:dash_activate = 1 " should dash come to the foreground after searching in 
 " let g:dash_map = {} " lets you assign docsets to filetypes. For example,
 " 'java' : 'android' would search all of the Android-related docsets when
 " you're on a Java file
-
-" --- vimspector
-" see https://github.com/puremourning/vimspector#human-mode for binds
-let g:vimspector_enable_mappings = 'HUMAN'
-nnoremap <F3> :VimspectorReset<CR>
 
 " --- coc.nvim
 " Copied from their repo.
@@ -143,13 +136,13 @@ autocmd CursorHold * silent call CocActionAsync('highlight')
 nmap <leader>rn <Plug>(coc-rename)
 
 " Formatting selected code.
-xmap <leader>f  <Plug>(coc-format-selected)
-nmap <leader>f  <Plug>(coc-format-selected)
+xmap <leader>f  :Format<CR>
+nmap <leader>f  :Format<CR>
 
 augroup mygroup
   autocmd!
   " Setup formatexpr specified filetype(s).
-  autocmd FileType typescript,json setl formatexpr=CocAction('formatSelected')
+  autocmd FileType typescript,json setl formatexpr=CocAction('format')
   " Update signature help on jump placeholder.
   autocmd User CocJumpPlaceholder call CocActionAsync('showSignatureHelp')
 augroup end
@@ -163,7 +156,6 @@ nmap <leader>a  <Plug>(coc-codeaction-selected)
 nmap <leader>ac  <Plug>(coc-codeaction)
 " Apply AutoFix to problem on the current line.
 nmap <leader>qf  <Plug>(coc-fix-current)
-
 " Run the Code Lens action on the current line.
 nmap <leader>cl  <Plug>(coc-codelens-action)
 
@@ -205,28 +197,25 @@ command! -nargs=0 OR   :call     CocActionAsync('runCommand', 'editor.action.org
 " Add (Neo)Vim's native statusline support.
 " NOTE: Please see `:h coc-status` for integrations with external plugins that
 " provide custom statusline: lightline.vim, vim-airline.
-" TODO(reno): integrate this w/ airline
 " set statusline^=%{coc#status()}%{get(b:,'coc_current_function','')}
 
-" TODO(reno): go through these and see if I actually need them
 " Mappings for CoCList
 " Show all diagnostics.
-" nnoremap <silent><nowait> <space>a  :<C-u>CocList diagnostics<cr>
+nnoremap <silent><nowait> <leader>a  :<C-u>CocList diagnostics<cr>
 " " Manage extensions.
-" nnoremap <silent><nowait> <space>e  :<C-u>CocList extensions<cr>
+nnoremap <silent><nowait> <leader>e  :<C-u>CocList extensions<cr>
 " " Show commands.
-" nnoremap <silent><nowait> <space>c  :<C-u>CocList commands<cr>
+nnoremap <silent><nowait> <leader>c  :<C-u>CocList commands<cr>
 " " Find symbol of current document.
-" nnoremap <silent><nowait> <space>o  :<C-u>CocList outline<cr>
+nnoremap <silent><nowait> <leader>o  :<C-u>CocList outline<cr>
 " " Search workspace symbols.
-" nnoremap <silent><nowait> <space>s  :<C-u>CocList -I symbols<cr>
+nnoremap <silent><nowait> <leader>ss  :<C-u>CocList -I symbols<cr>
 " " Do default action for next item.
-" nnoremap <silent><nowait> <space>j  :<C-u>CocNext<CR>
+nnoremap <silent><nowait> <leader>j  :<C-u>CocNext<CR>
 " " Do default action for previous item.
-" nnoremap <silent><nowait> <space>k  :<C-u>CocPrev<CR>
+nnoremap <silent><nowait> <leader>k  :<C-u>CocPrev<CR>
 " " Resume latest coc list.
-" nnoremap <silent><nowait> <space>p  :<C-u>CocListResume<CR>
-
+nnoremap <silent><nowait> <leader>p  :<C-u>CocListResume<CR>
 
 " Commands
 " File Tree
@@ -240,110 +229,85 @@ let g:vdebug_options = { 'port':9001, 'path_maps': {'/vagrant/':getcwd()}, 'serv
 " fzf setup
 set rtp+=/opt/homebrew/opt/fzf
 
-" Taken from https://www.freecodecamp.org/news/how-to-search-project-wide-vim-ripgrep-ack/
-" ack.vim --- {{{
-
-" Use ripgrep for searching ⚡️
-" Options include:
-" --vimgrep -> Needed to parse the rg response properly for ack.vim
-" --type-not sql -> Avoid huge sql file dumps as it slows down the search
-" --smart-case -> Search case insensitive if all lowercase pattern, Search case sensitively otherwise
-let g:ackprg = 'rg --vimgrep --type-not sql --smart-case'
-
-" Auto close the Quickfix list after pressing '<enter>' on a list item
-let g:ack_autoclose = 1
-
-" Any empty ack search will search for the work the cursor is on
-let g:ack_use_cword_for_empty_search = 1
-
-" Don't jump to first match
-cnoreabbrev Ack Ack!
-
-" Maps <leader>/ so we're ready to type the search keyword
-nnoremap <Leader>/ :Ack!<Space>
-" }}}
-
 " Navigate quickfix list with ease
 nnoremap <silent> [q :cprevious<CR>
 nnoremap <silent> ]q :cnext<CR>
 
+" Add TODOs after cursor
+" TODO(reno): Make this make a comment also
+nnoremap <leader>td aTODO(reno)<ESC>
+
 
 " Lua-based Config
 lua << EOF
--- LSP Config
-local nvim_lsp = require('lspconfig')
-local on_attach = function(client, bufnr)
-  local function buf_set_keymap(...) vim.api.nvim_buf_set_keymap(bufnr, ...) end
-  local function buf_set_option(...) vim.api.nvim_buf_set_option(bufnr, ...) end
-  buf_set_option('omnifunc', 'v:lua.vim.lsp.omnifunc')
-  -- Mappings.
-  local opts = { noremap=true, silent=false }
-  buf_set_keymap('n', 'gD', '<cmd>lua vim.lsp.buf.declaration()<CR>', opts)
-  buf_set_keymap('n', 'gd', '<cmd>lua vim.lsp.buf.definition()<CR>', opts)
-  buf_set_keymap('n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', opts)
-  buf_set_keymap('n', 'gi', '<cmd>lua vim.lsp.buf.implementation()<CR>', opts)
-  buf_set_keymap('n', '<C-k>', '<cmd>lua vim.lsp.buf.signature_help()<CR>', opts)
-  buf_set_keymap('n', '<space>wa', '<cmd>lua vim.lsp.buf.add_workspace_folder()<CR>', opts)
-  buf_set_keymap('n', '<space>wr', '<cmd>lua vim.lsp.buf.remove_workspace_folder()<CR>', opts)
-  buf_set_keymap('n', '<space>wl', '<cmd>lua print(vim.inspect(vim.lsp.buf.list_workspace_folders()))<CR>', opts)
-  buf_set_keymap('n', '<space>D', '<cmd>lua vim.lsp.buf.type_definition()<CR>', opts)
-  buf_set_keymap('n', '<space>rn', '<cmd>lua vim.lsp.buf.rename()<CR>', opts)
-  buf_set_keymap('n', 'gr', '<cmd>lua vim.lsp.buf.references()<CR>', opts)
-  buf_set_keymap('n', '<space>e', '<cmd>lua vim.lsp.diagnostic.show_line_diagnostics()<CR>', opts)
-  buf_set_keymap('n', '[d', '<cmd>lua vim.lsp.diagnostic.goto_prev()<CR>', opts)
-  buf_set_keymap('n', ']d', '<cmd>lua vim.lsp.diagnostic.goto_next()<CR>', opts)
-  buf_set_keymap('n', '<space>q', '<cmd>lua vim.lsp.diagnostic.set_loclist()<CR>', opts)
-end
-require'lspconfig'.tsserver.setup{
-	on_attach = on_attach
-}
-require'lspconfig'.jedi_language_server.setup{
-	on_attach = on_attach
-}
-require'lspconfig'.phpactor.setup{
-	root_dir = require'lspconfig'.util.root_pattern(".git"),
-	on_attach = on_attach
-}
-require'lspconfig'.gopls.setup{
-	cmd = {"gopls", "serve"},
-	on_attach = on_attach,
-	settings = {
-		gopls = {
-			analyses = {
-				unusedparams = true
-			},
-			staticcheck = true
-		}
-	}
-}
-require'lspconfig'.rls.setup {
-	on_attach = on_attach,
-	settings = {
-		rust = {
-			unstable_features = false,
-			build_on_save = false,
-			all_features = true
-		}
-	}
-}
-require'lspconfig'.hls.setup {
-	on_attach = on_attach
-}
 -- file tree setup
 require('nvim-tree').setup()
+-- nvim-dap & nvim-dap-ui
+local dap, dapui = require('dap'), require("dapui")
+dap.adapters.php = {
+	type = 'executable',
+	command = 'node',
+	args = { '{{ .chezmoi.homeDir }}/programs/vscode-php-debug/out/phpDebug.js' }
+}
+-- This is specific to my LACRM setup
+-- TODO: File mapping to Vagrant machine
+dap.configurations.php = {
+	{
+		type = 'php',
+		request = 'launch',
+		name = 'Listen for Xdebug',
+		port = 9001,
+		pathMappings = {
+			["/vagrant/"] = "$HOME/lacrm/LessAnnoyingCRM"
+		}
+	}
+}
+require('dapui').setup()
+dap.listeners.after.event_initialized["dapui_config"] = function ()
+	dapui.open()
+end
+dap.listeners.before.disconnect["dapui_config"] = function ()
+	dapui.close()
+end
+dap.listeners.after.event_exited["dapui_config"] = function ()
+	dapui.close()
+end
+
+vim.keymap.set('n', '<F5>', function() require('dap').continue() end)
+vim.keymap.set('n', '<leader>dd', function() require('dap').disconnect() end)
+vim.keymap.set('n', '<F10>', function() require('dap').step_over() end)
+vim.keymap.set('n', '<F11>', function() require('dap').step_into() end)
+vim.keymap.set('n', '<F12>', function() require('dap').step_out() end)
+vim.keymap.set('n', '<leader>b', function() require('dap').toggle_breakpoint() end)
+vim.keymap.set('n', '<leader>B', function() require('dap').set_breakpoint() end)
+vim.keymap.set('n', '<leader>lp', function() require('dap').set_breakpoint(nil, nil, vim.fn.input('Log point message: ')) end)
+vim.keymap.set('n', '<leader>dr', function() require('dap').repl.open() end)
+vim.keymap.set('n', '<leader>dl', function() require('dap').run_last() end)
+vim.keymap.set({'n', 'v'}, '<Leader>dh', function()
+  require('dap.ui.widgets').hover()
+end)
+vim.keymap.set({'n', 'v'}, '<Leader>dp', function()
+  require('dap.ui.widgets').preview()
+end)
+vim.keymap.set('n', '<Leader>df', function()
+  local widgets = require('dap.ui.widgets')
+  widgets.centered_float(widgets.frames)
+end)
+vim.keymap.set('n', '<Leader>ds', function()
+  local widgets = require('dap.ui.widgets')
+  widgets.centered_float(widgets.scopes)
+end)
 EOF
 
 " Treesitter-based folding
 " set foldmethod=expr
 " set foldexpr=nvim_treesitter#foldexpr()
 
-" Enable Omnifunc for Go
-autocmd FileType go setlocal omnifunc=v:lua.vim.lsp.omnifunc
-autocmd FileType haskell setlocal shiftwidth=2 softtabstop=2 expandtab
-
-" enable $theme 
+" enable $theme
 set termguicolors
 set winblend=0
 set wildoptions=pum
 set pumblend=5
-syntax on 
+syntax on
+set background=dark
+colorscheme gruvbox
