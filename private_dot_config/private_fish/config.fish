@@ -14,6 +14,7 @@ if test "$OS" = "Darwin"
 	fish_add_path /opt/homebrew/bin
 	fish_add_path /opt/homebrew/sbin
 end
+fish_add_path "$home_path/.local/bin"
 fish_add_path "$home_path/.bin"
 fish_add_path "$home_path/.cargo/bin"
 fish_add_path "$home_path/go/bin"
