@@ -18,6 +18,7 @@ fish_add_path "$home_path/.local/bin"
 fish_add_path "$home_path/.bin"
 fish_add_path "$home_path/.cargo/bin"
 fish_add_path "$home_path/go/bin"
+fish_add_path "$home_path/.local/share/fnm"
 
 # Remove default fish greeting
 set fish_greeting ""
