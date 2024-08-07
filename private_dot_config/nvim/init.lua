@@ -9,7 +9,7 @@ vim.o.shiftwidth = 4
 vim.o.autoindent = true
 vim.o.wrap = false
 vim.o.swapfile = false
-vim.o.undodir = '~/.vim/undodir'
+vim.o.undodir = vim.fn.expand('~/.vim/undodir')
 vim.o.undofile = true
 vim.o.incsearch = true
 vim.o.scrolloff = 8
@@ -45,6 +45,8 @@ Plug('glepnir/galaxyline.nvim', { ['branch'] = 'main' })              -- statusb
 Plug('kyazdani42/nvim-tree.lua')                                      -- file tree
 Plug('nvim-tree/nvim-web-devicons')                                   -- file tree (icons)
 Plug('mfussenegger/nvim-dap')                                         -- debugging support (via DAP)
+Plug('leoluz/nvim-dap-go')                                            -- debugging golang w/ dlv
+Plug('nvim-neotest/nvim-nio')                                          -- dep for nvim-dap-ui
 Plug('rcarriga/nvim-dap-ui')                                          -- UI for nvim-dap
 Plug('kdheepak/lazygit.nvim')                                         -- lazygit inside of nvim
 Plug('numToStr/Comment.nvim')                                         -- easy toggle comments
@@ -57,6 +59,7 @@ Plug('hrsh7th/nvim-cmp')                                              -- End aut
 Plug('mfussenegger/nvim-lint')                                        -- handles linters
 Plug('folke/trouble.nvim')                                            -- diagnostic display
 Plug('L3MON4D3/LuaSnip')                                              -- snippet engine
+Plug('ray-x/go.nvim')                                                 -- golang features
 vim.call('plug#end')
 
 require('Comment').setup()
@@ -74,14 +77,25 @@ require('mason-nvim-dap').setup({
 
 -- lsp config
 local lspconfig = require('lspconfig')
--- TODO(reno): Intelephense Pro Key
-local servers = { 'lua_ls', 'tsserver', 'intelephense', 'rust_analyzer', 'gopls' }
+local servers = { 'lua_ls', 'tsserver', 'intelephense', 'rust_analyzer', 'gopls', 'svelte', 'somesass_ls' }
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
 for _, lsp in ipairs(servers) do
 	lspconfig[lsp].setup {
-		capabilities = capabilities
+		capabilities = capabilities,
 	}
 end
+
+-- golang specific setup
+local format_sync_grp = vim.api.nvim_create_augroup("GoFormat", {})
+vim.api.nvim_create_autocmd("BufWritePre", {
+	pattern = "*.go",
+	callback = function()
+		require('go.format').goimports()
+	end,
+	group = format_sync_grp,
+})
+
+require('go').setup()
 
 local luasnip = require('luasnip')
 
@@ -166,6 +180,29 @@ vim.api.nvim_create_autocmd('LspAttach', {
 	end,
 })
 
+-- nvim-lint setup
+local lint = require('lint')
+lint.linters_by_ft = {
+  javascript = {'eslint',}
+}
+vim.api.nvim_create_autocmd({ "BufWritePost" }, {
+  callback = function()
+
+    -- try_lint without arguments runs the linters defined in `linters_by_ft`
+    -- for the current filetype
+    require("lint").try_lint()
+
+    -- You can call `try_lint` with a linter name or a list of names to always
+    -- run specific linters, independent of the `linters_by_ft` configuration
+    require("lint").try_lint("cspell")
+  end,
+})
+
+-- DEBUG(reno): using this to figure out linter plugin
+vim.keymap.set('n', '<leader>rls', function ()
+	print(require("lint").get_running())
+end)
+
 -- telescope setup
 local telescope = require('telescope')
 telescope.setup {
@@ -202,13 +239,13 @@ vim.keymap.set('n', '<C-p>', builtin.find_files)
 vim.keymap.set('n', '<leader>/', builtin.live_grep)
 -- TODO(reno): Search for selection in visual mode, vimscript line below:
 -- vnoremap <leader>/ y:Telescope grep_string search=<C-r>"<CR>
--- vim.keymap.set('n', '<C-p>', builtin.find_files)
 vim.keymap.set('n', '<leader>fb', builtin.buffers)
-vim.keymap.set('n', '<leader>fh', builtin.help_tags)
+vim.keymap.set('n', '<leader>fh', builtin.lsp_workspace_symbols)
 vim.keymap.set('n', '<leader>ff', builtin.resume)
 
 -- dap/dap-ui setup (debugger)
 local dap, dapui = require('dap'), require("dapui")
+require('dap-go').setup()
 dap.adapters.php = {
 	type = 'executable',
 	command = 'node',

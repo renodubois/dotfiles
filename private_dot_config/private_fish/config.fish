@@ -66,9 +66,9 @@ end
 function evim
 	switch (uname)
 		case Linux
-			command nvim /home/reno/.config/nvim/init.vim
+			command nvim /home/reno/.config/nvim/init.lua
 		case Darwin
-			command nvim /Users/reno/.config/nvim/init.vim
+			command nvim /Users/reno/.config/nvim/init.lua
 		end
 end
 
