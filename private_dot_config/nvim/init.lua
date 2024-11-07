@@ -1,5 +1,21 @@
 local vim = vim
-local Plug = vim.fn['plug#']
+
+-- Bootstrap lazy.nvim
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not (vim.uv or vim.loop).fs_stat(lazypath) then
+	local lazyrepo = "https://github.com/folke/lazy.nvim.git"
+	local out = vim.fn.system({ "git", "clone", "--filter=blob:none", "--branch=stable", lazyrepo, lazypath })
+	if vim.v.shell_error ~= 0 then
+		vim.api.nvim_echo({
+			{ "Failed to clone lazy.nvim:\n", "ErrorMsg" },
+			{ out,                            "WarningMsg" },
+			{ "\nPress any key to exit..." },
+		}, true, {})
+		vim.fn.getchar()
+		os.exit(1)
+	end
+end
+vim.opt.rtp:prepend(lazypath)
 
 -- basic options
 vim.o.hidden = true
@@ -22,45 +38,67 @@ vim.o.hlsearch = false
 
 vim.g.mapleader = ' '
 
+-- Dependency install
+require("lazy").setup({
+	spec = {
+		{ 'williamboman/mason.nvim' },     -- manages LSP/DAP/linters/formatters
+		{ 'williamboman/mason-lspconfig.nvim' }, -- uses mason to install lsp servers automatically
+		{ 'jay-babu/mason-nvim-dap.nvim' }, -- uses mason to install dap programs
+		{ 'neovim/nvim-lspconfig' },       -- lsp support
+		{
+			'nvim-treesitter/nvim-treesitter', -- syntax highlighting
+			build = ":TSUpdate",
+			config = function()
+				local configs = require('nvim-treesitter.configs')
+				configs.setup({
+					ensure_installed = { "lua", "vim", "vimdoc", "query", "typescript", "php", "javascript", "html", "css" },
+					sync_install = false,
+					highlight = { enable = true },
+					indent = { enable = true },
+				})
+			end
+		},
+		{
+			'nvim-telescope/telescope.nvim',
+			tag = '0.1.8',
+			dependencies = { 'nvim-lua/plenary.nvim' }
+		},
 
--- Plugins via vim-plug
-vim.call('plug#begin', '~/.vim/plugged')
-Plug('williamboman/mason.nvim')                                       -- manages LSP/DAP/linters/formatters
-Plug('williamboman/mason-lspconfig.nvim')                             -- uses mason to install lsp servers automatically
-Plug('jay-babu/mason-nvim-dap.nvim')                                  -- uses mason to install dap programs
-Plug('neovim/nvim-lspconfig')                                         -- lsp support
-Plug('nvim-lua/plenary.nvim')                                         -- required for telescope.nvim
-Plug('nvim-treesitter/nvim-treesitter', { ['do'] = ':TSUpdate' })     -- required for telescope.nvim
-Plug('nvim-telescope/telescope.nvim', { ['tag'] = '0.1.5' })          -- searching/finder
-Plug('nvim-telescope/telescope-fzf-native.nvim', { ['do'] = 'make' }) -- telescope extension
-Plug('nvim-telescope/telescope-fzy-native.nvim')                      -- telescope extension
-Plug('junegunn/fzf')                                                  -- fuzzy file finder
-Plug('junegunn/fzf.vim')                                              -- fuzzy file finder
-Plug('tpope/vim-fugitive')                                            -- Git wrapper
-Plug('tpope/vim-eunuch')                                              -- UNIX Command sugar
-Plug('ellisonleao/gruvbox.nvim')                                      -- theme
-Plug('rizzatti/dash.vim')                                             -- Searching Dash docs from Vim
-Plug('konapun/vacuumline.nvim')                                       -- statusbar
-Plug('glepnir/galaxyline.nvim', { ['branch'] = 'main' })              -- statusbar
-Plug('kyazdani42/nvim-tree.lua')                                      -- file tree
-Plug('nvim-tree/nvim-web-devicons')                                   -- file tree (icons)
-Plug('mfussenegger/nvim-dap')                                         -- debugging support (via DAP)
-Plug('leoluz/nvim-dap-go')                                            -- debugging golang w/ dlv
-Plug('nvim-neotest/nvim-nio')                                          -- dep for nvim-dap-ui
-Plug('rcarriga/nvim-dap-ui')                                          -- UI for nvim-dap
-Plug('kdheepak/lazygit.nvim')                                         -- lazygit inside of nvim
-Plug('numToStr/Comment.nvim')                                         -- easy toggle comments
-Plug('lewis6991/gitsigns.nvim')                                       -- modified/added/etc in the side column
-Plug('hrsh7th/cmp-nvim-lsp')                                          -- Autocomplete
-Plug('hrsh7th/cmp-buffer')                                            -- Autocomplete
-Plug('hrsh7th/cmp-path')                                              -- Autocomplete
-Plug('hrsh7th/cmp-cmdline')                                           -- Autocomplete
-Plug('hrsh7th/nvim-cmp')                                              -- End autocomplete
-Plug('mfussenegger/nvim-lint')                                        -- handles linters
-Plug('folke/trouble.nvim')                                            -- diagnostic display
-Plug('L3MON4D3/LuaSnip')                                              -- snippet engine
-Plug('ray-x/go.nvim')                                                 -- golang features
-vim.call('plug#end')
+		{ 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' }, -- telescope extension
+		{ 'nvim-telescope/telescope-fzy-native.nvim' },           -- telescope extension
+		{ 'junegunn/fzf' },                                       -- fuzzy file finder
+		{ 'junegunn/fzf.vim' },                                   -- fuzzy file finder
+		{ 'tpope/vim-fugitive' },                                 -- Git wrapper
+		{ 'tpope/vim-eunuch' },                                   -- UNIX Command sugar
+		{ 'tpope/vim-surround' },                                 -- Changing surrounding quotes/brackets
+		{ 'ellisonleao/gruvbox.nvim' },                           -- theme
+		{ 'rizzatti/dash.vim' },                                  -- Searching Dash docs from Vim
+		{ 'konapun/vacuumline.nvim' },                            -- statusbar
+		{
+			'glepnir/galaxyline.nvim',                            -- statusbar
+			branch = 'main'
+		},
+		{ 'kyazdani42/nvim-tree.lua' }, -- file tree
+		{ 'nvim-tree/nvim-web-devicons' }, -- file tree (icons },
+		{ 'mfussenegger/nvim-dap' }, -- debugging support (via DAP },
+		{ 'leoluz/nvim-dap-go' },    -- debugging golang w/ dlv
+		{ 'nvim-neotest/nvim-nio' }, -- dep for nvim-dap-ui
+		{ 'rcarriga/nvim-dap-ui' },  -- UI for nvim-dap
+		{ 'kdheepak/lazygit.nvim' }, -- lazygit inside of nvim
+		{ 'numToStr/Comment.nvim' }, -- easy toggle comments
+		{ 'lewis6991/gitsigns.nvim' }, -- modified/added/etc in the side column
+		{ 'hrsh7th/cmp-nvim-lsp' },  -- Autocomplete
+		{ 'hrsh7th/cmp-buffer' },    -- Autocomplete
+		{ 'hrsh7th/cmp-path' },      -- Autocomplete
+		{ 'hrsh7th/cmp-cmdline' },   -- Autocomplete
+		{ 'hrsh7th/nvim-cmp' },      -- End autocomplete
+		{ 'mfussenegger/nvim-lint' }, -- handles linters
+		{ 'folke/trouble.nvim' },    -- diagnostic display
+		{ 'L3MON4D3/LuaSnip' },      -- snippet engine
+		{ 'ray-x/go.nvim' },         -- golang features
+	},
+	checker = { enabled = true },
+})
 
 require('Comment').setup()
 require('gitsigns').setup()
@@ -74,28 +112,6 @@ require('mason-lspconfig').setup {
 require('mason-nvim-dap').setup({
 	automatic_installation = true -- automatically installs any dap programs listed below
 })
-
--- lsp config
-local lspconfig = require('lspconfig')
-local servers = { 'lua_ls', 'tsserver', 'intelephense', 'rust_analyzer', 'gopls', 'svelte', 'somesass_ls' }
-local capabilities = require('cmp_nvim_lsp').default_capabilities()
-for _, lsp in ipairs(servers) do
-	lspconfig[lsp].setup {
-		capabilities = capabilities,
-	}
-end
-
--- golang specific setup
-local format_sync_grp = vim.api.nvim_create_augroup("GoFormat", {})
-vim.api.nvim_create_autocmd("BufWritePre", {
-	pattern = "*.go",
-	callback = function()
-		require('go.format').goimports()
-	end,
-	group = format_sync_grp,
-})
-
-require('go').setup()
 
 local luasnip = require('luasnip')
 
@@ -140,7 +156,31 @@ cmp.setup {
 		{ name = 'nvim_lsp' },
 		{ name = 'luasnip' },
 	},
+	{ name = 'buffer' }
 }
+
+-- lsp config
+local lspconfig = require('lspconfig')
+local servers = { 'lua_ls', 'tsserver', 'intelephense', 'rust_analyzer', 'gopls', 'svelte', 'somesass_ls' }
+local capabilities = require('cmp_nvim_lsp').default_capabilities()
+for _, lsp in ipairs(servers) do
+	lspconfig[lsp].setup {
+		capabilities = capabilities,
+	}
+end
+
+-- golang specific setup
+local format_sync_grp = vim.api.nvim_create_augroup("GoFormat", {})
+vim.api.nvim_create_autocmd("BufWritePre", {
+	pattern = "*.go",
+	callback = function()
+		require('go.format').goimports()
+	end,
+	group = format_sync_grp,
+})
+
+require('go').setup()
+
 
 -- default lsp keybinds: copied from gh:neovim/nvim-lspconfig, "Suggested Configuration"
 -- See `:help vim.diagnostic.*` for documentation on any of the below functions
@@ -183,23 +223,22 @@ vim.api.nvim_create_autocmd('LspAttach', {
 -- nvim-lint setup
 local lint = require('lint')
 lint.linters_by_ft = {
-  javascript = {'eslint',}
+	javascript = { 'eslint', }
 }
 vim.api.nvim_create_autocmd({ "BufWritePost" }, {
-  callback = function()
+	callback = function()
+		-- try_lint without arguments runs the linters defined in `linters_by_ft`
+		-- for the current filetype
+		require("lint").try_lint()
 
-    -- try_lint without arguments runs the linters defined in `linters_by_ft`
-    -- for the current filetype
-    require("lint").try_lint()
-
-    -- You can call `try_lint` with a linter name or a list of names to always
-    -- run specific linters, independent of the `linters_by_ft` configuration
-    require("lint").try_lint("cspell")
-  end,
+		-- You can call `try_lint` with a linter name or a list of names to always
+		-- run specific linters, independent of the `linters_by_ft` configuration
+		require("lint").try_lint("cspell")
+	end,
 })
 
 -- DEBUG(reno): using this to figure out linter plugin
-vim.keymap.set('n', '<leader>rls', function ()
+vim.keymap.set('n', '<leader>rls', function()
 	print(require("lint").get_running())
 end)
 
@@ -249,7 +288,7 @@ require('dap-go').setup()
 dap.adapters.php = {
 	type = 'executable',
 	command = 'node',
-	args = { '/Users/reno/programs/vscode-php-debug/out/phpDebug.js' }
+	args = { '/home/reno/programs/vscode-php-debug/out/phpDebug.js' }
 }
 -- This is specific to my LACRM setup
 -- TODO: File mapping to Vagrant machine
@@ -260,7 +299,7 @@ dap.configurations.php = {
 		name = 'Listen for Xdebug',
 		port = 9001,
 		pathMappings = {
-			["/vagrant/"] = "/Users/reno/lacrm/LessAnnoyingCRM"
+			["/vagrant/"] = "/home/reno/lacrm/LessAnnoyingCRM"
 		}
 	}
 }
@@ -271,7 +310,7 @@ dap.adapters["pwa-node"] = {
 	port = "${port}",
 	executable = {
 		command = "node",
-		args = { "/Users/reno/programs/js-debug/src/dapDebugServer.js", "${port}" }
+		args = { "/home/reno/programs/js-debug/src/dapDebugServer.js", "${port}" }
 	}
 }
 
