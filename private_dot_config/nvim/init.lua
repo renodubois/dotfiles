@@ -161,12 +161,25 @@ cmp.setup {
 
 -- lsp config
 local lspconfig = require('lspconfig')
-local servers = { 'lua_ls', 'tsserver', 'intelephense', 'rust_analyzer', 'gopls', 'svelte', 'somesass_ls' }
+local servers = { 'lua_ls', 'tsserver', 'intelephense', 'rust_analyzer', 'gopls', 'svelte', 'somesass_ls', 'gdscript' }
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
 for _, lsp in ipairs(servers) do
-	lspconfig[lsp].setup {
-		capabilities = capabilities,
-	}
+	if lsp == 'gdscript' then
+		lspconfig[lsp].setup {
+			filetypes = { "gd", "gdscript", "gdscript3" },
+			root_dir = lspconfig.util.root_pattern("project.godot", ".git"),
+			on_init = function (client)
+				client.config.settings = {
+					tcp = true,
+					port = 6005
+				}
+			end
+		}
+	else
+		lspconfig[lsp].setup {
+			capabilities = capabilities,
+		}
+	end
 end
 
 -- golang specific setup
