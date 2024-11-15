@@ -97,7 +97,6 @@ require("lazy").setup({
 		{ 'L3MON4D3/LuaSnip' },      -- snippet engine
 		{ 'ray-x/go.nvim' },         -- golang features
 	},
-	checker = { enabled = true },
 })
 
 require('Comment').setup()
@@ -161,7 +160,7 @@ cmp.setup {
 
 -- lsp config
 local lspconfig = require('lspconfig')
-local servers = { 'lua_ls', 'tsserver', 'intelephense', 'rust_analyzer', 'gopls', 'svelte', 'somesass_ls', 'gdscript' }
+local servers = { 'lua_ls', 'ts_ls', 'intelephense', 'rust_analyzer', 'gopls', 'svelte', 'somesass_ls', 'gdscript' }
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
 for _, lsp in ipairs(servers) do
 	if lsp == 'gdscript' then
@@ -301,7 +300,7 @@ require('dap-go').setup()
 dap.adapters.php = {
 	type = 'executable',
 	command = 'node',
-	args = { '/home/reno/programs/vscode-php-debug/out/phpDebug.js' }
+	args = { '/Users/reno/programs/vscode-php-debug/out/phpDebug.js' }
 }
 -- This is specific to my LACRM setup
 -- TODO: File mapping to Vagrant machine
@@ -312,7 +311,7 @@ dap.configurations.php = {
 		name = 'Listen for Xdebug',
 		port = 9001,
 		pathMappings = {
-			["/vagrant/"] = "/home/reno/lacrm/LessAnnoyingCRM"
+			["/vagrant/"] = "/Users/reno/lacrm/LessAnnoyingCRM"
 		}
 	}
 }
