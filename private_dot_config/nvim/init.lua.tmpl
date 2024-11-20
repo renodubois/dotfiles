@@ -300,7 +300,7 @@ require('dap-go').setup()
 dap.adapters.php = {
 	type = 'executable',
 	command = 'node',
-	args = { '/Users/reno/programs/vscode-php-debug/out/phpDebug.js' }
+	args = { '{{ .chezmoi.homeDir }}/programs/vscode-php-debug/out/phpDebug.js' }
 }
 -- This is specific to my LACRM setup
 -- TODO: File mapping to Vagrant machine
@@ -311,7 +311,7 @@ dap.configurations.php = {
 		name = 'Listen for Xdebug',
 		port = 9001,
 		pathMappings = {
-			["/vagrant/"] = "/Users/reno/lacrm/LessAnnoyingCRM"
+			["/vagrant/"] = "{{ .chezmoi.homeDir }}/lacrm/LessAnnoyingCRM"
 		}
 	}
 }
