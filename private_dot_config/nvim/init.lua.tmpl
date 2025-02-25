@@ -64,20 +64,22 @@ require("lazy").setup({
 			dependencies = { 'nvim-lua/plenary.nvim' }
 		},
 
-		{ 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' }, -- telescope extension
-		{ 'nvim-telescope/telescope-fzy-native.nvim' },           -- telescope extension
-		{ 'junegunn/fzf' },                                       -- fuzzy file finder
-		{ 'junegunn/fzf.vim' },                                   -- fuzzy file finder
-		{ 'tpope/vim-fugitive' },                                 -- Git wrapper
-		{ 'tpope/vim-eunuch' },                                   -- UNIX Command sugar
-		{ 'tpope/vim-surround' },                                 -- Changing surrounding quotes/brackets
-		{ 'ellisonleao/gruvbox.nvim' },                           -- theme
-		{ 'rizzatti/dash.vim' },                                  -- Searching Dash docs from Vim
-		{ 'konapun/vacuumline.nvim' },                            -- statusbar
+		{ 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },                 -- telescope extension
+		{ 'nvim-telescope/telescope-fzy-native.nvim' },                                 -- telescope extension
+		{ 'junegunn/fzf' },                                                             -- fuzzy file finder
+		{ 'junegunn/fzf.vim' },                                                         -- fuzzy file finder
+		{ 'tpope/vim-fugitive' },                                                       -- Git wrapper
+		{ 'tpope/vim-eunuch' },                                                         -- UNIX Command sugar
+		{ 'tpope/vim-surround' },                                                       -- Changing surrounding quotes/brackets
+		{ 'ellisonleao/gruvbox.nvim' },                                                 -- theme
+		{ "catppuccin/nvim",                          name = "catppuccin", priority = 1000 }, -- theme
+		{ 'rizzatti/dash.vim' },                                                        -- Searching Dash docs from Vim
+		{ 'konapun/vacuumline.nvim' },                                                  -- statusbar
 		{
-			'glepnir/galaxyline.nvim',                            -- statusbar
+			'glepnir/galaxyline.nvim',                                                  -- statusbar
 			branch = 'main'
 		},
+		{ 'ojroques/nvim-hardline' }, -- statusbar
 		{ 'kyazdani42/nvim-tree.lua' }, -- file tree
 		{ 'nvim-tree/nvim-web-devicons' }, -- file tree (icons },
 		{ 'mfussenegger/nvim-dap' }, -- debugging support (via DAP },
@@ -101,7 +103,10 @@ require("lazy").setup({
 
 require('Comment').setup()
 require('gitsigns').setup()
-require('vacuumline').setup()
+-- require('vacuumline').setup()
+require('hardline').setup {
+	bufferline = true,
+}
 require('nvim-tree').setup()
 
 require('mason').setup()
@@ -109,6 +114,7 @@ require('mason-lspconfig').setup {
 	automatic_installation = true -- automatically installs any lsp programs listed below
 }
 require('mason-nvim-dap').setup({
+	ensure_installed = { "php-debug-adapter" },
 	automatic_installation = true -- automatically installs any dap programs listed below
 })
 
@@ -160,14 +166,15 @@ cmp.setup {
 
 -- lsp config
 local lspconfig = require('lspconfig')
-local servers = { 'lua_ls', 'ts_ls', 'intelephense', 'rust_analyzer', 'gopls', 'svelte', 'somesass_ls', 'gdscript', 'csharp_ls' }
+local servers = { 'lua_ls', 'ts_ls', 'intelephense', 'rust_analyzer', 'gopls', 'svelte', 'somesass_ls', 'gdscript',
+	'csharp_ls' }
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
 for _, lsp in ipairs(servers) do
 	if lsp == 'gdscript' then
 		lspconfig[lsp].setup {
 			filetypes = { "gd", "gdscript", "gdscript3" },
 			root_dir = lspconfig.util.root_pattern("project.godot", ".git"),
-			on_init = function (client)
+			on_init = function(client)
 				client.config.settings = {
 					tcp = true,
 					port = 6005
@@ -299,8 +306,7 @@ local dap, dapui = require('dap'), require("dapui")
 require('dap-go').setup()
 dap.adapters.php = {
 	type = 'executable',
-	command = 'node',
-	args = { '{{ .chezmoi.homeDir }}/programs/vscode-php-debug/out/phpDebug.js' }
+	command = vim.fn.stdpath("data") .. "/mason/bin/php-debug-adapter",
 }
 -- This is specific to my LACRM setup
 -- TODO: File mapping to Vagrant machine
@@ -389,4 +395,5 @@ vim.keymap.set('n', '<C-n>', '<cmd>NvimTreeToggle<cr>')
 vim.keymap.set('n', '<leader>td', 'gccaTODO(reno):')
 
 -- Set color scheme
-vim.cmd.colorscheme('gruvbox')
+-- vim.cmd.colorscheme('gruvbox')
+vim.cmd.colorscheme('catppuccin-macchiato')
