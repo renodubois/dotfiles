@@ -93,25 +93,33 @@ require("lazy").setup({
 			branch = 'main'
 		},
 		{ 'ojroques/nvim-hardline' }, -- statusbar
-		{ 'kyazdani42/nvim-tree.lua' }, -- file tree
-		{ 'nvim-tree/nvim-web-devicons' }, -- file tree (icons },
-		{ 'mfussenegger/nvim-dap' }, -- debugging support (via DAP },
-		{ 'leoluz/nvim-dap-go' },    -- debugging golang w/ dlv
-		{ 'rcarriga/nvim-dap-ui', dependencies = { 'nvim-neotest/nvim-nio' } },  -- UI for nvim-dap
-		{ 'kdheepak/lazygit.nvim' }, -- lazygit inside of nvim
-		{ 'numToStr/Comment.nvim' }, -- easy toggle comments
-		{ 'lewis6991/gitsigns.nvim' }, -- modified/added/etc in the side column
-		{ 'hrsh7th/cmp-nvim-lsp' },  -- Autocomplete
-		{ 'hrsh7th/cmp-buffer' },    -- Autocomplete
-		{ 'hrsh7th/cmp-path' },      -- Autocomplete
-		{ 'hrsh7th/cmp-cmdline' },   -- Autocomplete
-		{ 'hrsh7th/nvim-cmp' },      -- End autocomplete
-		{ 'mfussenegger/nvim-lint' }, -- handles linters
-		{ 'folke/trouble.nvim' },    -- diagnostic display
-		{ 'L3MON4D3/LuaSnip' },      -- snippet engine
-		{ 'ray-x/go.nvim' },         -- golang features
 		{
-			'mrcjkb/rustaceanvim', version = '^6', lazy = false -- rust support - LSP, debugging, etc.
+			'romgrk/barbar.nvim',
+			dependencies = { 'lewis6991/gitsigns.nvim', 'nvim-tree/nvim-web-devicons' },
+			init = function() vim.g.barbar_auto_setup = true end,
+			opts = {
+				animation = false,
+			}
+		},
+		{ 'kyazdani42/nvim-tree.lua' },                                         -- file tree
+		{ 'nvim-tree/nvim-web-devicons' },                                      -- file tree (icons },
+		{ 'mfussenegger/nvim-dap' },                                            -- debugging support (via DAP },
+		{ 'leoluz/nvim-dap-go' },                                               -- debugging golang w/ dlv
+		{ 'rcarriga/nvim-dap-ui',       dependencies = { 'nvim-neotest/nvim-nio' } }, -- UI for nvim-dap
+		{ 'kdheepak/lazygit.nvim' },                                            -- lazygit inside of nvim
+		{ 'numToStr/Comment.nvim' },                                            -- easy toggle comments
+		{ 'lewis6991/gitsigns.nvim' },                                          -- modified/added/etc in the side column
+		{ 'hrsh7th/cmp-nvim-lsp' },                                             -- Autocomplete
+		{ 'hrsh7th/cmp-buffer' },                                               -- Autocomplete
+		{ 'hrsh7th/cmp-path' },                                                 -- Autocomplete
+		{ 'hrsh7th/cmp-cmdline' },                                              -- Autocomplete
+		{ 'hrsh7th/nvim-cmp' },                                                 -- End autocomplete
+		{ 'mfussenegger/nvim-lint' },                                           -- handles linters
+		{ 'folke/trouble.nvim' },                                               -- diagnostic display
+		{ 'L3MON4D3/LuaSnip' },                                                 -- snippet engine
+		{ 'ray-x/go.nvim' },                                                    -- golang features
+		{
+			'mrcjkb/rustaceanvim', version = '^6', lazy = false                 -- rust support - LSP, debugging, etc.
 		}
 
 	},
@@ -124,9 +132,8 @@ vim.cmd.colorscheme('catppuccin-macchiato')
 require('Comment').setup()
 require('gitsigns').setup()
 -- require('vacuumline').setup()
-require('hardline').setup {
-	bufferline = true,
-}
+-- TODO(reno): this isn't working and i'm not sure why
+-- require('hardline').setup {}
 require('nvim-tree').setup()
 
 require('mason').setup()
@@ -204,11 +211,23 @@ for _, lsp in ipairs(servers) do
 		})
 	elseif lsp == "rust_analyzer" then
 		-- nothing for now - trying rustaceanvim
+	elseif lsp == "intelephense" then
+		vim.lsp.config(lsp, {
+			capabilities = capabilities,
+			settings = {
+				intelephense = {
+					format = {
+						braces = "k&r"
+					}
+				}
+			}
+		})
 	else
 		vim.lsp.config(lsp, {
 			capabilities = capabilities,
 		})
 	end
+	vim.lsp.enable(lsp)
 end
 
 -- golang specific setup
@@ -347,7 +366,7 @@ dap.adapters = {
 		port = "${port}",
 		executable = {
 			command = "node",
-			args = { "{{ .chezmoi.homeDir }}/programs/js-debug/src/dapDebugServer.js", "${port}" }
+			args = { "~/programs/js-debug/src/dapDebugServer.js", "${port}" }
 		}
 	}
 }
@@ -361,7 +380,7 @@ dap.configurations = {
 			name = 'Listen for Xdebug',
 			port = 9001,
 			pathMappings = {
-				["/vagrant/"] = "{{ .chezmoi.homeDir }}/lacrm/LessAnnoyingCRM"
+				["/vagrant/"] = "~/lacrm/LessAnnoyingCRM"
 			}
 		}
 	},
