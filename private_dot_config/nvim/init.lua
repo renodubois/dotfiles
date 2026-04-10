@@ -60,39 +60,26 @@ require("lazy").setup({
 		},                            -- lsp support, plus vim completion in lua files
 		{
 			'nvim-treesitter/nvim-treesitter', -- syntax highlighting
+			-- NOTE(reno): I really just want this to use the main branch, but that wasn't working
+			-- for some reason. ALSO, this repo is archived, I should swap to a fork.
+			commit = "4916d6592ede8c07973490d9322f187e07dfefac",
+			-- branch = "main",
+			lazy = false,
 			build = ":TSUpdate",
-			config = function()
-				local configs = require('nvim-treesitter.configs')
-				configs.setup({
-					ensure_installed = { "lua", "vim", "vimdoc", "query", "typescript", "php", "javascript", "html", "css", "rust" },
-					sync_install = false,
-					highlight = { enable = true },
-					indent = { enable = true },
-				})
-			end
 		},
 		{
 			'nvim-telescope/telescope.nvim',
-			tag = '0.1.8',
-			dependencies = { 'nvim-lua/plenary.nvim' }
+			{
+				'nvim-lua/plenary.nvim',
+				{ 'natecraddock/telescope-zf-native.nvim' }
+			}
 		},
-
-		{ 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },                 -- telescope extension
-		{ 'nvim-telescope/telescope-fzy-native.nvim' },                                 -- telescope extension
-		{ 'junegunn/fzf' },                                                             -- fuzzy file finder
-		{ 'junegunn/fzf.vim' },                                                         -- fuzzy file finder
-		{ 'tpope/vim-fugitive' },                                                       -- Git wrapper
-		{ 'tpope/vim-eunuch' },                                                         -- UNIX Command sugar
-		{ 'tpope/vim-surround' },                                                       -- Changing surrounding quotes/brackets
-		{ 'ellisonleao/gruvbox.nvim' },                                                 -- theme
-		{ "catppuccin/nvim",                          name = "catppuccin", priority = 1000 }, -- theme
-		{ 'rizzatti/dash.vim' },                                                        -- Searching Dash docs from Vim
-		{ 'konapun/vacuumline.nvim' },                                                  -- statusbar
-		{
-			'glepnir/galaxyline.nvim',                                                  -- statusbar
-			branch = 'main'
-		},
-		{ 'ojroques/nvim-hardline' }, -- statusbar
+		{ 'tpope/vim-fugitive' },                                      -- Git wrapper
+		{ 'tpope/vim-eunuch' },                                        -- UNIX Command sugar
+		{ 'tpope/vim-surround' },                                      -- Changing surrounding quotes/brackets
+		{ 'ellisonleao/gruvbox.nvim' },                                -- theme
+		{ "catppuccin/nvim",         name = "catppuccin", priority = 1000 }, -- theme
+		{ 'rizzatti/dash.vim' },                                       -- Searching Dash docs from Vim
 		{
 			'romgrk/barbar.nvim',
 			dependencies = { 'lewis6991/gitsigns.nvim', 'nvim-tree/nvim-web-devicons' },
@@ -101,6 +88,7 @@ require("lazy").setup({
 				animation = false,
 			}
 		},
+		{ 'nvim-lualine/lualine.nvim',  dependencies = { 'nvim-tree/nvim-web-devicons' } },
 		{ 'kyazdani42/nvim-tree.lua' },                                         -- file tree
 		{ 'nvim-tree/nvim-web-devicons' },                                      -- file tree (icons },
 		{ 'mfussenegger/nvim-dap' },                                            -- debugging support (via DAP },
@@ -125,15 +113,14 @@ require("lazy").setup({
 	},
 })
 
+require('lualine').setup({})
+
 -- Set color scheme
--- vim.cmd.colorscheme('gruvbox')
-vim.cmd.colorscheme('catppuccin-macchiato')
+vim.cmd.colorscheme('gruvbox')
+-- vim.cmd.colorscheme('catppuccin-macchiato')
 
 require('Comment').setup()
 require('gitsigns').setup()
--- require('vacuumline').setup()
--- TODO(reno): this isn't working and i'm not sure why
--- require('hardline').setup {}
 require('nvim-tree').setup()
 
 require('mason').setup()
@@ -145,6 +132,9 @@ require('mason-nvim-dap').setup({
 	ensure_installed = { "php-debug-adapter", "codelldb" },
 	automatic_installation = true -- automatically installs any dap programs listed below
 })
+
+-- treesitter setup
+require('nvim-treesitter').install { "lua", "vim", "vimdoc", "query", "typescript", "php", "javascript", "html", "css", "rust" }
 
 local luasnip = require('luasnip')
 
@@ -299,51 +289,21 @@ vim.api.nvim_create_autocmd({ "BufWritePost" }, {
 	end,
 })
 
--- DEBUG(reno): using this to figure out linter plugin
--- TODO(reno): can probably remove this?
-vim.keymap.set('n', '<leader>rls', function()
-	print(require("lint").get_running())
-end)
-
 -- telescope setup
 local telescope = require('telescope')
-telescope.setup {
-	pickers = {
-		find_files = {
-			theme = "ivy"
-		},
-		git_files = {
-			theme = "ivy"
-		},
-		live_grep = {
-			theme = "ivy"
-		},
-		buffers = {
-			theme = "ivy"
-		},
-		help_tags = {
-			theme = "ivy"
-		}
-	},
-	extensions = {
-		fzf = {
-			fuzzy = true,          -- false will only do exact matching
-			override_generic_sorter = true, -- override the generic sorter
-			override_file_sorter = true, -- override the file sorter
-			case_mode = "smart_case"
-		}
-	},
-	defaults = {
-		path_display = { "smart" }
-	}
-}
-telescope.load_extension('fzf')
+telescope.setup {}
+telescope.load_extension('zf-native')
 
 local builtin = require('telescope.builtin')
 vim.keymap.set('n', '<C-p>', builtin.find_files)
 vim.keymap.set('n', '<leader>/', builtin.live_grep)
--- TODO(reno): Search for selection in visual mode, vimscript line below:
--- vnoremap <leader>/ y:Telescope grep_string search=<C-r>"<CR>
+vim.keymap.set('v', '<leader>/', function()
+	local vstart = vim.fn.getpos("v")
+	local vend = vim.fn.getpos(".")
+	local lines = vim.fn.getregion(vstart, vend)
+	local search = table.concat(lines, "\n")
+	builtin.live_grep({ default_text = search })
+end)
 vim.keymap.set('n', '<leader>fb', builtin.buffers)
 vim.keymap.set('n', '<leader>fh', builtin.lsp_workspace_symbols)
 vim.keymap.set('n', '<leader>ff', builtin.resume)
@@ -373,17 +333,6 @@ dap.adapters = {
 -- This is specific to my LACRM setup
 -- TODO: File mapping to Vagrant machine
 dap.configurations = {
-	php = {
-		{
-			type = 'php',
-			request = 'launch',
-			name = 'Listen for Xdebug',
-			port = 9001,
-			pathMappings = {
-				["/vagrant/"] = "~/lacrm/LessAnnoyingCRM"
-			}
-		}
-	},
 	javascript = {
 		{
 			type = "pwa-node",
@@ -441,8 +390,25 @@ vim.keymap.set("n", "<leader>xl", function() require("trouble").toggle("loclist"
 vim.keymap.set("n", "gR", function() require("trouble").toggle("lsp_references") end)
 
 --- custom keybinds
--- TODO(reno): audit use of cmd instead of the lua functions -- is one approach better? does it matter?
 vim.keymap.set('n', '<leader>lg', '<cmd>LazyGit<cr>')
 vim.keymap.set('n', '<C-n>', '<cmd>NvimTreeToggle<cr>')
 -- quickly add a todo comment
-vim.keymap.set('n', '<leader>td', 'gccaTODO(reno):')
+vim.keymap.set('n', '<leader>td', function()
+	local line = vim.api.nvim_get_current_line()
+	if line:match('%S') then
+		-- Line has text — insert a new line above with matching indentation
+		local indent = line:match('^(%s*)')
+		local row = vim.api.nvim_win_get_cursor(0)[1]
+		vim.api.nvim_buf_set_lines(0, row - 1, row - 1, false, { indent .. '.' })
+		vim.api.nvim_win_set_cursor(0, { row, 0 })
+		-- gcc comments the line, then $ goes to end and s replaces the placeholder
+		local keys = 'gcc$s TODO(reno): '
+		vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(keys, true, false, true), 'm', false)
+	else
+		local keys = 'gccA TODO(reno): '
+		vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(keys, true, false, true), 'm', false)
+	end
+end)
+-- buffer management
+vim.keymap.set('n', '<C-b>', '<cmd>BufferPick<cr>') -- barbar.nvim has a 'magic picker' mode, default bind is <C-p> which I use for telescope
+vim.keymap.set('n', '<C-s-b>', '<cmd>BufferPickDelete<cr>')
