@@ -9,6 +9,9 @@ set-option -g default-shell /opt/homebrew/bin/fish
 set-option -g default-shell /usr/bin/fish
 {{ end }}
 
+# Support for stuff like shift+enter
+set -g extended-keys on
+
 # Enable focus events (recommended by neovim checkhealth)
 set-option -g focus-events on
 
