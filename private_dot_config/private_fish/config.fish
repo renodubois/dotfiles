@@ -1,7 +1,6 @@
-# NOTE: fish_add_path requires fish > 3.2
-# Home path
 set OS (uname)
-# TODO: Change this dynamically for macOS/Linux
+
+# Home path
 switch $OS
 	case Linux
 		set home_path "/home/reno"
@@ -24,7 +23,6 @@ fish_add_path "$home_path/.local/share/fnm"
 set fish_greeting ""
 
 # NOTE: this might be bad
-# set -gx COLORTERM truecolor
 set -gx EDITOR nvim
 
 # Default powerline prompt
@@ -43,22 +41,8 @@ set -g default_user reno
 fnm env | source
 
 # Aliases
-
-# OS Specific
-if test "$OS" = "Linux"
-	function docker
-		command sudo docker $argv
-	end
-	function docker-compose
-		command sudo docker-compose $argv
-	end
-end
-
 function ls
 	command ls -la $argv
-end
-function vim
-	command nvim $argv
 end
 function vim
 	command nvim $argv
@@ -79,32 +63,7 @@ function lg
 	command lazygit
 end
 
-# START: m1 Specific Aliases
-function brew
-	command arch -arm64 brew $argv
-end
-
-function brew64
-	command arch -x86_64 /usr/local/bin/brew $argv
-end
-
-alias ttp="cd '/Users/reno/Library/Application Support/Steam/steamapps/common/TabletopPlayground/Tabletop Playground.app/Contents/UE4/TabletopPlayground/'"
-
 function dcr
 	command docker-compose run $argv
 end
-# A very specific alias that lets me run Python inside of the Docker compose
-# container used for the DSA site
-function dcp
-	command docker-compose run django python $argv
-end
-
-# Aliases to x86_64 versions of programs
-function py64
-	command /usr/local/bin/python3 $argv
-end
-
-
 # END
-fish_add_path /opt/homebrew/opt/php@7.4/bin
-fish_add_path /opt/homebrew/opt/php@7.4/sbin
