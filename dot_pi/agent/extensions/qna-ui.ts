@@ -101,7 +101,12 @@ export default function qnaUi(pi: ExtensionAPI) {
 					let selectedIndex = 0;
 					let editMode = params.options.length === 0 && allowCustom;
 					let validationMessage: string | undefined;
+					let questionScrollOffset = 0;
+					let questionLineCount = 0;
+					let questionViewportHeight = 0;
 					let cachedLines: string[] | undefined;
+					let cachedWidth: number | undefined;
+					let cachedRows: number | undefined;
 
 					const editorTheme: EditorTheme = {
 						borderColor: (s) => theme.fg("accent", s),
@@ -115,8 +120,14 @@ export default function qnaUi(pi: ExtensionAPI) {
 					};
 					const editor = new Editor(tui, editorTheme);
 
-					function refresh() {
+					function clearCache() {
 						cachedLines = undefined;
+						cachedWidth = undefined;
+						cachedRows = undefined;
+					}
+
+					function refresh() {
+						clearCache();
 						tui.requestRender();
 					}
 
@@ -144,7 +155,56 @@ export default function qnaUi(pi: ExtensionAPI) {
 						done({ answer: selected.label, wasCustom: false, selectedIndex: selectedIndex + 1 });
 					}
 
+					function scrollQuestionTo(offset: number): boolean {
+						const viewportHeight = questionViewportHeight || Math.max(1, Math.floor(tui.terminal.rows / 2));
+						const maxOffset = Math.max(0, questionLineCount - viewportHeight);
+						const nextOffset = Math.max(0, Math.min(maxOffset, offset));
+						if (nextOffset === questionScrollOffset) return false;
+						questionScrollOffset = nextOffset;
+						refresh();
+						return true;
+					}
+
+					function scrollQuestionBy(delta: number): boolean {
+						return scrollQuestionTo(questionScrollOffset + delta);
+					}
+
+					function handleQuestionScrollInput(data: string): boolean {
+						const pageSize =
+							questionViewportHeight > 0 ? Math.max(1, questionViewportHeight - 1) : Math.max(1, Math.floor(tui.terminal.rows / 2));
+						const halfPageSize = Math.max(1, Math.floor(pageSize / 2));
+						const questionCanScroll = questionViewportHeight > 0 && questionLineCount > questionViewportHeight;
+
+						if (matchesKey(data, Key.ctrl("u"))) {
+							if (!questionCanScroll) return false;
+							scrollQuestionBy(-halfPageSize);
+							return true;
+						}
+
+						if (matchesKey(data, Key.ctrl("d"))) {
+							if (!questionCanScroll) return false;
+							scrollQuestionBy(halfPageSize);
+							return true;
+						}
+
+						if (matchesKey(data, Key.pageUp)) {
+							if (!questionCanScroll) return false;
+							scrollQuestionBy(-pageSize);
+							return true;
+						}
+
+						if (matchesKey(data, Key.pageDown)) {
+							if (!questionCanScroll) return false;
+							scrollQuestionBy(pageSize);
+							return true;
+						}
+
+						return false;
+					}
+
 					function handleInput(data: string) {
+						if (handleQuestionScrollInput(data)) return;
+
 						if (editMode) {
 							if (matchesKey(data, Key.escape) || matchesKey(data, Key.ctrl("c"))) {
 								if (params.options.length === 0) {
@@ -161,6 +221,16 @@ export default function qnaUi(pi: ExtensionAPI) {
 							validationMessage = undefined;
 							editor.handleInput(data);
 							refresh();
+							return;
+						}
+
+						if (matchesKey(data, Key.home)) {
+							scrollQuestionTo(0);
+							return;
+						}
+
+						if (matchesKey(data, Key.end)) {
+							scrollQuestionTo(Number.MAX_SAFE_INTEGER);
 							return;
 						}
 
@@ -201,59 +271,104 @@ export default function qnaUi(pi: ExtensionAPI) {
 						}
 					}
 
-					function render(width: number): string[] {
-						if (cachedLines) return cachedLines;
+					function scrollIndicator(text: string, width: number): string {
+						const label = `─── ${text} `;
+						return theme.fg("accent", truncateToWidth(label + "─".repeat(Math.max(0, width)), width, ""));
+					}
 
-						const lines: string[] = [];
-						const add = (s: string) => lines.push(truncateToWidth(s, width));
+					function render(width: number): string[] {
+						const rows = tui.terminal.rows;
+						if (cachedLines && cachedWidth === width && cachedRows === rows) return cachedLines;
+
+						// Leave room for pi's footer so the prompt itself does not push into terminal scrollback.
+						const maxComponentLines = Math.max(1, rows - 3);
+						const add = (target: string[], s: string) => target.push(truncateToWidth(s, width));
 						const border = theme.fg("accent", "─".repeat(Math.max(0, width)));
 
-						add(border);
-						add(theme.fg("accent", theme.bold(" Q+A")));
-						addWrapped(lines, theme.fg("text", ` ${params.question}`), width);
-						lines.push("");
+						const headerLines: string[] = [];
+						add(headerLines, border);
+						add(headerLines, theme.fg("accent", theme.bold(" Q+A")));
 
+						const questionLines: string[] = [];
+						addWrapped(questionLines, theme.fg("text", ` ${params.question}`), width);
+						questionLineCount = questionLines.length;
+
+						const answerLines: string[] = [""];
 						for (let i = 0; i < displayOptions.length; i++) {
 							const option = displayOptions[i];
 							const selected = i === selectedIndex;
 							const prefix = selected ? theme.fg("accent", "> ") : "  ";
 							const label = `${i + 1}. ${option.label}${option.isCustom && editMode ? " ✎" : ""}`;
-							add(prefix + theme.fg(selected ? "accent" : "text", label));
+							add(answerLines, prefix + theme.fg(selected ? "accent" : "text", label));
 
 							if (option.description) {
-								add(`     ${theme.fg("muted", option.description)}`);
+								add(answerLines, `     ${theme.fg("muted", option.description)}`);
 							}
 						}
 
 						if (editMode) {
-							lines.push("");
-							add(theme.fg("muted", " Your answer:"));
+							answerLines.push("");
+							add(answerLines, theme.fg("muted", " Your answer:"));
 							for (const line of editor.render(Math.max(1, width - 2))) {
-								add(` ${line}`);
+								add(answerLines, ` ${line}`);
 							}
 							if (validationMessage) {
-								add(theme.fg("warning", ` ${validationMessage}`));
+								add(answerLines, theme.fg("warning", ` ${validationMessage}`));
 							}
 						}
 
-						lines.push("");
+						const footerLineCount = 3;
+						const questionAreaHeight = Math.max(
+							0,
+							Math.min(questionLines.length, maxComponentLines - headerLines.length - answerLines.length - footerLineCount),
+						);
+						const questionNeedsScroll = questionLines.length > questionAreaHeight;
+						const questionIndicatorLineCount = questionNeedsScroll && questionAreaHeight > 1 ? 1 : 0;
+						questionViewportHeight = Math.max(0, questionAreaHeight - questionIndicatorLineCount);
+						const maxQuestionScrollOffset = Math.max(0, questionLines.length - questionViewportHeight);
+						questionScrollOffset = Math.max(0, Math.min(maxQuestionScrollOffset, questionScrollOffset));
+
+						const visibleQuestionLines = questionLines.slice(questionScrollOffset, questionScrollOffset + questionViewportHeight);
+						const hiddenAbove = questionScrollOffset;
+						const hiddenBelow = Math.max(0, questionLines.length - (questionScrollOffset + questionViewportHeight));
+						if (questionIndicatorLineCount > 0) {
+							const indicator =
+								hiddenAbove > 0 && hiddenBelow > 0
+									? scrollIndicator(`↑ ${hiddenAbove} more • ↓ ${hiddenBelow} more • Ctrl+U/D or PgUp/PgDn`, width)
+									: hiddenAbove > 0
+										? scrollIndicator(`↑ ${hiddenAbove} more • Ctrl+U or PgUp`, width)
+										: scrollIndicator(`↓ ${hiddenBelow} more • Ctrl+D or PgDn`, width);
+							if (hiddenAbove > 0) {
+								visibleQuestionLines.unshift(indicator);
+							} else {
+								visibleQuestionLines.push(indicator);
+							}
+						}
+
+						const footerLines: string[] = [""];
+						const scrollHelp = maxQuestionScrollOffset > 0 ? " • Ctrl+U/D or PgUp/PgDn scroll question" : "";
 						if (editMode) {
 							const help = params.options.length === 0 ? " Enter submit • Esc cancel" : " Enter submit • Esc back to options";
-							add(theme.fg("dim", help));
+							add(footerLines, theme.fg("dim", `${help}${scrollHelp}`));
 						} else {
-							add(theme.fg("dim", " ↑↓ navigate • 1-9 quick select • Enter select • Esc cancel"));
+							add(footerLines, theme.fg("dim", ` ↑↓ navigate • 1-9 quick select • Enter select • Esc cancel${scrollHelp}`));
 						}
-						add(border);
+						add(footerLines, border);
+
+						let lines = [...headerLines, ...visibleQuestionLines, ...answerLines, ...footerLines];
+						if (lines.length > maxComponentLines) {
+							lines = lines.slice(lines.length - maxComponentLines);
+						}
 
 						cachedLines = lines;
+						cachedWidth = width;
+						cachedRows = rows;
 						return lines;
 					}
 
 					return {
 						render,
-						invalidate: () => {
-							cachedLines = undefined;
-						},
+						invalidate: clearCache,
 						handleInput,
 					};
 				},
