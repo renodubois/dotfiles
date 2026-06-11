@@ -1,7 +1,6 @@
 import { Type } from "typebox";
 import type { WebExtensionConfig } from "../config.ts";
 import type { TtlCache } from "../cache.ts";
-import { fetchUrl } from "../fetch/fetch-url.ts";
 import { clampNumber, UNTRUSTED_FETCH_WARNING } from "../text.ts";
 
 export const webFetchParameters = Type.Object({
@@ -27,6 +26,7 @@ export function createWebFetchTool(config: WebExtensionConfig, cache: TtlCache<a
       let page = cache.get(key);
       const cacheHit = Boolean(page);
       if (!page) {
+        const { fetchUrl } = await import("../fetch/fetch-url.ts");
         page = await fetchUrl({ url: params.url, maxChars, config, signal });
         cache.set(key, page);
       }

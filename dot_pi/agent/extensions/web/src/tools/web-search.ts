@@ -1,7 +1,6 @@
 import { Type } from "typebox";
 import type { WebExtensionConfig } from "../config.ts";
 import type { TtlCache } from "../cache.ts";
-import { duckDuckGoHtmlSearch } from "../search/duckduckgo-html.ts";
 import { clampNumber, UNTRUSTED_SEARCH_WARNING } from "../text.ts";
 
 export const webSearchParameters = Type.Object({
@@ -28,6 +27,7 @@ export function createWebSearchTool(config: WebExtensionConfig, cache: TtlCache<
       let result = cache.get(key);
       const cacheHit = Boolean(result);
       if (!result) {
+        const { duckDuckGoHtmlSearch } = await import("../search/duckduckgo-html.ts");
         result = await duckDuckGoHtmlSearch({
           query: params.query,
           site: params.site,
