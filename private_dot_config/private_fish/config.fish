@@ -57,7 +57,7 @@ function evim
 end
 
 function pip
-	command python3.9 -m pip $argv
+	command python -m pip $argv
 end
 function lg
 	command lazygit
@@ -67,3 +67,10 @@ function dcr
 	command docker-compose run $argv
 end
 # END
+
+# pnpm
+set -gx PNPM_HOME "$home_path/.local/share/pnpm"
+if not string match -q -- "$PNPM_HOME/bin" $PATH
+  set -gx PATH "$PNPM_HOME/bin" $PATH
+end
+# pnpm end
